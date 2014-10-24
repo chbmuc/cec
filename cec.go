@@ -7,12 +7,12 @@ import(
 )
 
 type Device struct {
-	logical_address int
-	active_source bool
-	power_status string
-	vendor_id uint64 
-	physical_address string
-	osd_name string
+	LogicalAddress int
+	ActiveSource bool
+	PowerStatus string
+	VendorId uint64 
+	PhysicalAddress string
+	OSDName string
 }
 
 var logicalNames = []string{"TV", "Recording", "Recording2", "Tuner", "Playback", "Audio", "Tuner2", "Tuner3", "Playback2", "Recording3", "Tuner4", "Playback3", "Reserved", "Reserved2", "Free", "Broadcast"}
@@ -62,17 +62,16 @@ func List() map[string]Device {
 		if (active) {
 			var dev Device
 
-			dev.logical_address = address
-			dev.osd_name = GetDeviceOSDName(address)
-			dev.power_status = GetDevicePowerStatus(address)
-			dev.active_source = IsActiveSource(address)
-			dev.physical_address = GetDevicePhysicalAddress(address)
-			dev.vendor_id = GetDeviceVendorId(address)
+			dev.LogicalAddress = address
+			dev.PhysicalAddress = GetDevicePhysicalAddress(address)
+			dev.OSDName = GetDeviceOSDName(address)
+			dev.PowerStatus = GetDevicePowerStatus(address)
+			dev.ActiveSource = IsActiveSource(address)
+			dev.VendorId = GetDeviceVendorId(address)
 
 			devices[logicalNames[address]] = dev
 		}
 	}
-
 	return devices
 }
 
