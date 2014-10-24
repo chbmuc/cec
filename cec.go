@@ -107,13 +107,15 @@ func GetLogicalAddressByName(name string) int {
 		name = name[:l-1]
 	}
 
+	name = strings.ToLower(name)
+
 	for i:=0; i<16; i++ {
-		if logicalNames[i] == name {
+		if strings.ToLower(logicalNames[i]) == name {
 			return i
 		}
 	}
 
-	if name == "Unregistered" {
+	if name == "unregistered" {
 		return 15
 	}
 
