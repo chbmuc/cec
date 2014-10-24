@@ -209,7 +209,7 @@ func GetActiveDevices() [16]bool {
 func GetDeviceOSDName(address int) string {
 	result := C.cec_get_device_osd_name(C.cec_logical_address(address))
 
-	return C.GoStringN(&result.name[0], 14)
+	return C.GoString(&result.name[0])
 }
 
 func IsActiveSource(address int) bool {
