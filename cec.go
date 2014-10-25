@@ -29,6 +29,29 @@ var vendorList = map[uint64]string{ 0x000039:"Toshiba", 0x0000F0:"Samsung",
 	0x18C086:"Broadcom", 0x6B746D:"Vizio", 0x8065E9:"Benq",
 	0x9C645E:"Harman Kardon" }
 
+var keyList = map[int]string{ 0x00:"Select", 0x01:"Up", 0x02:"Down", 0x03:"Left",
+	0x04:"Right", 0x05:"RightUp", 0x06:"RightDown", 0x07:"LeftUp",
+	0x08:"LeftDown", 0x09:"RootMenu", 0x0A:"SetupMenu", 0x0B:"ContentsMenu",
+	0x0C:"FavoriteMenu", 0x0D:"Exit", 0x20:"0", 0x21:"1", 0x22:"2", 0x23:"3",
+	0x24:"4", 0x25:"5", 0x26:"6", 0x27:"7", 0x28:"8", 0x29:"9", 0x2A:"Dot",
+	0x2B:"Enter", 0x2C:"Clear", 0x2F:"NextFavorite", 0x30:"ChannelUp",
+	0x31:"ChannelDown", 0x32:"PreviousChannel", 0x33:"SoundSelect",
+	0x34:"InputSelect", 0x35:"DisplayInformation", 0x36:"Help",
+	0x37:"PageUp", 0x38:"PageDown", 0x40:"Power", 0x41:"VolumeUp",
+	0x42:"VolumeDown", 0x43:"Mute", 0x44:"Play", 0x45:"Stop", 0x46:"Pause",
+	0x47:"Record", 0x48:"Rewind", 0x49:"FastForward", 0x4A:"Eject",
+	0x4B:"Forward", 0x4C:"Backward", 0x4D:"StopRecord", 0x4E:"PauseRecord",
+	0x50:"Angle", 0x51:"SubPicture", 0x52:"VideoOnDemand",
+	0x53:"ElectronicProgramGuide", 0x54:"TimerProgramming",
+	0x55:"InitialConfiguration", 0x60:"PlayFunction", 0x61:"PausePlay",
+	0x62:"RecordFunction", 0x63:"PauseRecordFunction",
+	0x64:"StopFunction", 0x65:"Mute",
+	0x66:"RestoreVolume", 0x67:"Tune", 0x68:"SelectMedia",
+	0x69:"SelectAvInput", 0x6A:"SelectAudioInput", 0x6B:"PowerToggle",
+	0x6C:"PowerOff", 0x6D:"PowerOn", 0x71:"Blue", 0X72:"Red", 0x73:"Green",
+	0x74:"Yellow", 0x75:"F5", 0x76:"Data", 0x91:"AnReturn",
+	0x96:"Max" }
+
 func Open(name string, deviceName string) {
 	var config CECConfiguration
 	config.DeviceName = deviceName
@@ -51,8 +74,9 @@ func Open(name string, deviceName string) {
 	}
 }
 
-func Key(address int, key int) {
-	er := KeyPress(address, key)
+func Key(address int, key string) {
+	keycode := GetKeyCodeByName(key)
+	er := KeyPress(address, keycode)
 	if er != nil {
 		log.Println(er)
 		return
@@ -97,6 +121,19 @@ func removeSeparators(in string) string {
         }, in)
 
 	return(out)
+}
+
+func GetKeyCodeByName(name string) int {
+	name = removeSeparators(name)
+	name = strings.ToLower(name)
+
+	for code, value := range keyList {
+		if strings.ToLower(value) == name {
+			return code
+		}
+	}
+
+	return -1
 }
 
 func GetLogicalAddressByName(name string) int {
