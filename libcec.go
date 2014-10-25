@@ -119,8 +119,8 @@ func Transmit(command string) {
         cmd_len := len(cmd)
 
         if (cmd_len > 0) {
-                cec_command.initiator = C.cec_logical_address(cmd[0] >> 4)
-                cec_command.destination = C.cec_logical_address(cmd[0] & 7)
+                cec_command.initiator = C.cec_logical_address((cmd[0] >> 4) & 0xF)
+                cec_command.destination = C.cec_logical_address(cmd[0] & 0xF)
                 if (cmd_len > 1) {
                         cec_command.opcode_set = 1
                         cec_command.opcode = C.cec_opcode(cmd[1])
@@ -159,21 +159,21 @@ func Standby(address int) error {
 }
 
 func VolumeUp() error {
-	if C.cec_volume_up(C.int(1)) != 0 {
+	if C.cec_volume_up(1) != 0 {
 		return errors.New("Error in cec_volume_up")
 	}
 	return nil
 }
 
 func VolumeDown() error {
-	if C.cec_volume_down(C.int(1)) != 0 {
+	if C.cec_volume_down(1) != 0 {
 		return errors.New("Error in cec_volume_down")
 	}
 	return nil
 }
 
 func Mute() error {
-	if C.cec_mute_audio(C.int(1)) != 0 {
+	if C.cec_mute_audio(1) != 0 {
 		return errors.New("Error in cec_mute_audio")
 	}
 	return nil
