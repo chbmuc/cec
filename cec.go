@@ -2,6 +2,7 @@ package cec
 
 import(
 	"log"
+	"encoding/hex"
 	"time"
 	"strings"
 )
@@ -74,8 +75,27 @@ func Open(name string, deviceName string) {
 	}
 }
 
-func Key(address int, key string) {
-	keycode := GetKeyCodeByName(key)
+func Key(address int, key interface{}) {
+	var keycode int
+
+	switch key := key.(type) {
+	case string:
+		if key[:2] == "0x" && len(key) == 4 {
+			keybytes, err := hex.DecodeString(key[2:])
+	                if err != nil {
+				log.Println(err)
+				return
+			}
+			keycode = int(keybytes[0])
+		} else {
+			keycode = GetKeyCodeByName(key)
+		}
+	case int:
+		keycode = key
+	default:
+		log.Println("Invalid key type")
+		return
+	}
 	er := KeyPress(address, keycode)
 	if er != nil {
 		log.Println(er)
