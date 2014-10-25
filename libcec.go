@@ -180,14 +180,14 @@ func Mute() error {
 }
 
 func KeyPress(address int, key int) error {
-	if C.cec_send_keypress(C.cec_logical_address(address), C.cec_user_control_code(key), 1) != 0 {
+	if C.cec_send_keypress(C.cec_logical_address(address), C.cec_user_control_code(key), 1) != 1 {
 		return errors.New("Error in cec_send_keypress")
 	}
 	return nil
 }
 
 func KeyRelease(address int) error {
-	if C.cec_send_key_release(C.cec_logical_address(address), 1) != 0{
+	if C.cec_send_key_release(C.cec_logical_address(address), 1) != 1 {
 		return errors.New("Error in cec_send_key_release")
 	}
 	return nil
