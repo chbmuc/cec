@@ -44,8 +44,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
+
+	"github.com/golang/glog"
 )
 
 type CECConfiguration struct {
@@ -57,14 +58,19 @@ type CECAdapter struct {
 	Comm string
 }
 
+const (
+	// Versions hardcoded to 3.1.0
+	clientVersion = C.uint32_t(0x00030100)
+	serverVersion = C.uint32_t(0x00030100)
+)
+
 var conn C.libcec_connection_t
 
 func cecInit(config CECConfiguration) error {
 	var conf C.libcec_configuration
 
-	//TODO(bminor13): These constants aren't present in cecc.h - are they necessary?
-	//conf.clientVersion = C.uint32_t(C.CEC_CLIENT_VERSION_CURRENT)
-	//conf.serverVersion = C.uint32_t(C.CEC_SERVER_VERSION_CURRENT)
+	conf.clientVersion = clientVersion
+	conf.serverVersion = serverVersion
 
 	for i := 0; i < 5; i++ {
 		conf.deviceTypes.types[i] = C.CEC_DEVICE_TYPE_RESERVED
@@ -118,7 +124,7 @@ func Transmit(command string) {
 
 	cmd, err := hex.DecodeString(removeSeparators(command))
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	cmd_len := len(cmd)
 
