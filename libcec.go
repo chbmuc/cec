@@ -1,7 +1,7 @@
 package cec
 
-/* 
-#cgo pkg-config: libcec 
+/*
+#cgo pkg-config: libcec
 #include <stdio.h>
 #include <libcec/cecc.h>
 
@@ -37,167 +37,172 @@ void setLogicalAddress(cec_logical_addresses* addresses, cec_logical_address add
 	addresses->addresses[(int) address] = 1;
 }
 
-*/ 
+*/
 import "C"
 
 import (
-	"errors"
 	"encoding/hex"
-	"strings"
-	"log"
+	"errors"
 	"fmt"
+	"log"
+	"strings"
 )
 
-type CECConfiguration struct { 
-	DeviceName string 
-} 
+type CECConfiguration struct {
+	DeviceName string
+}
 
- 
-type CECAdapter struct { 
-	Path string 
-	Comm string 
-} 
+type CECAdapter struct {
+	Path string
+	Comm string
+}
 
-func cecInit(config CECConfiguration) error { 
-	var conf C.libcec_configuration 
+var conn C.libcec_connection_t
 
-	conf.clientVersion = C.uint32_t(C.CEC_CLIENT_VERSION_CURRENT)
-	conf.serverVersion = C.uint32_t(C.CEC_SERVER_VERSION_CURRENT)
+func cecInit(config CECConfiguration) error {
+	var conf C.libcec_configuration
 
-	for i:=0; i<5; i++ {
+	//TODO(bminor13): These constants aren't present in cecc.h - are they necessary?
+	//conf.clientVersion = C.uint32_t(C.CEC_CLIENT_VERSION_CURRENT)
+	//conf.serverVersion = C.uint32_t(C.CEC_SERVER_VERSION_CURRENT)
+
+	for i := 0; i < 5; i++ {
 		conf.deviceTypes.types[i] = C.CEC_DEVICE_TYPE_RESERVED
-        }
+	}
 	conf.deviceTypes.types[0] = C.CEC_DEVICE_TYPE_RECORDING_DEVICE
 
 	C.setName(&conf, C.CString(config.DeviceName))
-	C.setupCallbacks(&conf) 
+	C.setupCallbacks(&conf)
 
-	result := C.cec_initialise(&conf) 
-	if result < 1 { 
-		return errors.New("Failed to init CEC") 
-	}
-	return nil 
-} 
+	conn = C.libcec_initialise(&conf)
+	// TODO(bminor13): Need the correct error check here.
+	// if int(conn) < 1 {
+	// 	conn = 0
+	// 	return errors.New("Failed to init CEC")
+	// }
+	return nil
+}
 
-func getAdapter(name string) (CECAdapter, error) { 
-	var adapter CECAdapter 
+func getAdapter(name string) (CECAdapter, error) {
+	var adapter CECAdapter
 
-	var deviceList [10]C.cec_adapter  
-	devicesFound := int(C.cec_find_adapters(&deviceList[0], 10, nil))
+	var deviceList [10]C.cec_adapter
+	devicesFound := int(C.libcec_find_adapters(conn, &deviceList[0], 10, nil))
 
-	for i:=0; i < devicesFound; i++ {
-		device := deviceList[i] 
-		adapter.Path = C.GoStringN(&device.path[0], 1024) 
-		adapter.Comm = C.GoStringN(&device.comm[0], 1024) 
+	for i := 0; i < devicesFound; i++ {
+		device := deviceList[i]
+		adapter.Path = C.GoStringN(&device.path[0], 1024)
+		adapter.Comm = C.GoStringN(&device.comm[0], 1024)
 
 		if strings.Contains(adapter.Path, name) || strings.Contains(adapter.Comm, name) {
-			return adapter, nil 
+			return adapter, nil
 		}
 	}
 
-	return adapter, errors.New("No Device Found") 
+	return adapter, errors.New("No Device Found")
 }
 
-func openAdapter(adapter CECAdapter) error { 
-        C.cec_init_video_standalone()
+func openAdapter(adapter CECAdapter) error {
+	C.libcec_init_video_standalone(conn)
 
-	result := C.cec_open(C.CString(adapter.Comm), C.CEC_DEFAULT_CONNECT_TIMEOUT) 
-	if result < 1 { 
-		return errors.New("Failed to open adapter") 
-	} 
+	result := C.libcec_open(conn, C.CString(adapter.Comm), C.CEC_DEFAULT_CONNECT_TIMEOUT)
+	if result < 1 {
+		return errors.New("Failed to open adapter")
+	}
 
-	return nil 
-} 
+	return nil
+}
 
 func Transmit(command string) {
-        var cec_command C.cec_command
+	var cec_command C.cec_command
 
-        cmd, err := hex.DecodeString(removeSeparators(command))
-        if err != nil {
-                log.Fatal(err)
-        }
-        cmd_len := len(cmd)
+	cmd, err := hex.DecodeString(removeSeparators(command))
+	if err != nil {
+		log.Fatal(err)
+	}
+	cmd_len := len(cmd)
 
-        if (cmd_len > 0) {
-                cec_command.initiator = C.cec_logical_address((cmd[0] >> 4) & 0xF)
-                cec_command.destination = C.cec_logical_address(cmd[0] & 0xF)
-                if (cmd_len > 1) {
-                        cec_command.opcode_set = 1
-                        cec_command.opcode = C.cec_opcode(cmd[1])
-                } else {
-                        cec_command.opcode_set = 0
-                }
-                if (cmd_len > 2) {
-                        cec_command.parameters.size = C.uint8_t(cmd_len-2)
-                        for i := 0; i < cmd_len-2; i++ {
-                                cec_command.parameters.data[i] = C.uint8_t(cmd[i+2])
-                        }
-                } else {
-                        cec_command.parameters.size = 0
-                }
-        }
+	if cmd_len > 0 {
+		cec_command.initiator = C.cec_logical_address((cmd[0] >> 4) & 0xF)
+		cec_command.destination = C.cec_logical_address(cmd[0] & 0xF)
+		if cmd_len > 1 {
+			cec_command.opcode_set = 1
+			cec_command.opcode = C.cec_opcode(cmd[1])
+		} else {
+			cec_command.opcode_set = 0
+		}
+		if cmd_len > 2 {
+			cec_command.parameters.size = C.uint8_t(cmd_len - 2)
+			for i := 0; i < cmd_len-2; i++ {
+				cec_command.parameters.data[i] = C.uint8_t(cmd[i+2])
+			}
+		} else {
+			cec_command.parameters.size = 0
+		}
+	}
 
-        C.cec_transmit((*C.cec_command)(&cec_command))
+	C.libcec_transmit(conn, (*C.cec_command)(&cec_command))
 }
 
 func Destroy() {
-	C.cec_destroy()
+	C.libcec_destroy(conn)
+	// TODO(bminor13): Clear conn here?
 }
 
 func PowerOn(address int) error {
-	if C.cec_power_on_devices(C.cec_logical_address(address)) != 0 {
+	if C.libcec_power_on_devices(conn, C.cec_logical_address(address)) != 0 {
 		return errors.New("Error in cec_power_on_devices")
 	}
 	return nil
 }
 
 func Standby(address int) error {
-	if C.cec_standby_devices(C.cec_logical_address(address)) != 0 {
-		return errors.New("Error in cec_standby_devices")
+	if C.libcec_standby_devices(conn, C.cec_logical_address(address)) != 0 {
+		return errors.New("Error in libcec_standby_devices")
 	}
 	return nil
 }
 
 func VolumeUp() error {
-	if C.cec_volume_up(1) != 0 {
-		return errors.New("Error in cec_volume_up")
+	if C.libcec_volume_up(conn, 1) != 0 {
+		return errors.New("Error in libcec_volume_up")
 	}
 	return nil
 }
 
 func VolumeDown() error {
-	if C.cec_volume_down(1) != 0 {
-		return errors.New("Error in cec_volume_down")
+	if C.libcec_volume_down(conn, 1) != 0 {
+		return errors.New("Error in libcec_volume_down")
 	}
 	return nil
 }
 
 func Mute() error {
-	if C.cec_mute_audio(1) != 0 {
-		return errors.New("Error in cec_mute_audio")
+	if C.libcec_mute_audio(conn, 1) != 0 {
+		return errors.New("Error in libcec_mute_audio")
 	}
 	return nil
 }
 
 func KeyPress(address int, key int) error {
-	if C.cec_send_keypress(C.cec_logical_address(address), C.cec_user_control_code(key), 1) != 1 {
-		return errors.New("Error in cec_send_keypress")
+	if C.libcec_send_keypress(conn, C.cec_logical_address(address), C.cec_user_control_code(key), 1) != 1 {
+		return errors.New("Error in libcec_send_keypress")
 	}
 	return nil
 }
 
 func KeyRelease(address int) error {
-	if C.cec_send_key_release(C.cec_logical_address(address), 1) != 1 {
-		return errors.New("Error in cec_send_key_release")
+	if C.libcec_send_key_release(conn, C.cec_logical_address(address), 1) != 1 {
+		return errors.New("Error in libcec_send_key_release")
 	}
 	return nil
 }
 
 func GetActiveDevices() [16]bool {
 	var devices [16]bool
-	result := C.cec_get_active_devices()
+	result := C.libcec_get_active_devices(conn)
 
-	for i:=0; i < 16; i++ {
+	for i := 0; i < 16; i++ {
 		if int(result.addresses[i]) > 0 {
 			devices[i] = true
 		}
@@ -207,13 +212,13 @@ func GetActiveDevices() [16]bool {
 }
 
 func GetDeviceOSDName(address int) string {
-	result := C.cec_get_device_osd_name(C.cec_logical_address(address))
+	result := C.libcec_get_device_osd_name(conn, C.cec_logical_address(address))
 
 	return C.GoString(&result.name[0])
 }
 
 func IsActiveSource(address int) bool {
-	result := C.cec_is_active_source(C.cec_logical_address(address))
+	result := C.libcec_is_active_source(conn, C.cec_logical_address(address))
 
 	if int(result) != 0 {
 		return true
@@ -223,19 +228,19 @@ func IsActiveSource(address int) bool {
 }
 
 func GetDeviceVendorId(address int) uint64 {
-	result := C.cec_get_device_vendor_id(C.cec_logical_address(address))
+	result := C.libcec_get_device_vendor_id(conn, C.cec_logical_address(address))
 
 	return uint64(result)
 }
 
 func GetDevicePhysicalAddress(address int) string {
-	result := C.cec_get_device_physical_address(C.cec_logical_address(address))
+	result := C.libcec_get_device_physical_address(conn, C.cec_logical_address(address))
 
-	return fmt.Sprintf("%x.%x.%x.%x", (uint(result) >> 12) & 0xf, (uint(result) >> 8) & 0xf, (uint(result) >> 4) & 0xf, uint(result) & 0xf)
+	return fmt.Sprintf("%x.%x.%x.%x", (uint(result)>>12)&0xf, (uint(result)>>8)&0xf, (uint(result)>>4)&0xf, uint(result)&0xf)
 }
 
 func GetDevicePowerStatus(address int) string {
-	result := C.cec_get_device_power_status(C.cec_logical_address(address))
+	result := C.libcec_get_device_power_status(conn, C.cec_logical_address(address))
 
 	// C.CEC_POWER_STATUS_UNKNOWN == error
 
