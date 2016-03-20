@@ -8,6 +8,26 @@ import (
 	"github.com/golang/glog"
 )
 
+// Logical address values
+const (
+	TV int = iota
+	Recording
+	Recording2
+	Tuner
+	Playback
+	Audio
+	Tuner2
+	Tuner3
+	Playback2
+	Recording3
+	Tuner4
+	Playback3
+	Reserved
+	Reserved2
+	Free
+	Broadcast
+)
+
 type Device struct {
 	OSDName         string
 	Vendor          string

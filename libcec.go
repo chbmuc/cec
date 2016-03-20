@@ -45,6 +45,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unsafe"
 
 	"github.com/golang/glog"
 )
@@ -81,11 +82,9 @@ func cecInit(config CECConfiguration) error {
 	C.setupCallbacks(&conf)
 
 	conn = C.libcec_initialise(&conf)
-	// TODO(bminor13): Need the correct error check here.
-	// if int(conn) < 1 {
-	// 	conn = 0
-	// 	return errors.New("Failed to init CEC")
-	// }
+	if uintptr(conn) < 1 {
+		return errors.New("Failed to init CEC")
+	}
 	return nil
 }
 
@@ -152,7 +151,7 @@ func Transmit(command string) {
 
 func Destroy() {
 	C.libcec_destroy(conn)
-	// TODO(bminor13): Clear conn here?
+	conn = C.libcec_connection_t(unsafe.Pointer(uintptr(0)))
 }
 
 func PowerOn(address int) error {
