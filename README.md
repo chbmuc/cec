@@ -19,7 +19,7 @@ package main
 import "github.com/chbmuc/cec"
 
 func main() {
-	cec.Open("", "cec.go")
-	cec.PowerOn(0)
+	c := cec.Open("", "cec.go")
+	c.PowerOn(0)
 }
 ```

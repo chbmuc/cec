@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Device structure
 type Device struct {
 	OSDName         string
 	Vendor          string
@@ -53,29 +54,37 @@ var keyList = map[int]string{0x00: "Select", 0x01: "Up", 0x02: "Down", 0x03: "Le
 	0x74: "Yellow", 0x75: "F5", 0x76: "Data", 0x91: "AnReturn",
 	0x96: "Max"}
 
-func Open(name string, deviceName string) {
-	var config CECConfiguration
-	config.DeviceName = deviceName
+// Open - open a new connection to the CEC device with the given name
+func Open(name string, deviceName string) (*Connection, error) {
+	c := new(Connection)
 
-	if er := cecInit(config); er != nil {
-		log.Println(er)
-		return
+	var err error
+
+	c.connection, err = cecInit(deviceName)
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 
-	adapter, er := getAdapter(name)
-	if er != nil {
-		log.Println(er)
-		return
+	adapter, err := getAdapter(c.connection, name)
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 
-	er = openAdapter(adapter)
-	if er != nil {
-		log.Println(er)
-		return
+	err = openAdapter(c.connection, adapter)
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
+
+	return c, nil
 }
 
-func Key(address int, key interface{}) {
+// Key - send key press and release commands (hold key for 10ms) to the device
+// at the given address, the key code can be specified as a hex-code or by
+// its name
+func (c *Connection) Key(address int, key interface{}) {
 	var keycode int
 
 	switch key := key.(type) {
@@ -96,34 +105,35 @@ func Key(address int, key interface{}) {
 		log.Println("Invalid key type")
 		return
 	}
-	er := KeyPress(address, keycode)
+	er := c.KeyPress(address, keycode)
 	if er != nil {
 		log.Println(er)
 		return
 	}
 	time.Sleep(10 * time.Millisecond)
-	er = KeyRelease(address)
+	er = c.KeyRelease(address)
 	if er != nil {
 		log.Println(er)
 		return
 	}
 }
 
-func List() map[string]Device {
+// List - list active devices (returns a map of Devices)
+func (c *Connection) List() map[string]Device {
 	devices := make(map[string]Device)
 
-	active_devices := GetActiveDevices()
+	activeDevices := c.GetActiveDevices()
 
-	for address, active := range active_devices {
+	for address, active := range activeDevices {
 		if active {
 			var dev Device
 
 			dev.LogicalAddress = address
-			dev.PhysicalAddress = GetDevicePhysicalAddress(address)
-			dev.OSDName = GetDeviceOSDName(address)
-			dev.PowerStatus = GetDevicePowerStatus(address)
-			dev.ActiveSource = IsActiveSource(address)
-			dev.Vendor = GetVendorById(GetDeviceVendorId(address))
+			dev.PhysicalAddress = c.GetDevicePhysicalAddress(address)
+			dev.OSDName = c.GetDeviceOSDName(address)
+			dev.PowerStatus = c.GetDevicePowerStatus(address)
+			dev.ActiveSource = c.IsActiveSource(address)
+			dev.Vendor = GetVendorByID(c.GetDeviceVendorID(address))
 
 			devices[logicalNames[address]] = dev
 		}
@@ -131,8 +141,8 @@ func List() map[string]Device {
 	return devices
 }
 
+// removeSeparators - remove separators (":", "-", " ", "_")
 func removeSeparators(in string) string {
-	// remove separators (":", "-", " ", "_")
 	out := strings.Map(func(r rune) rune {
 		if strings.IndexRune(":-_ ", r) < 0 {
 			return r
@@ -143,6 +153,7 @@ func removeSeparators(in string) string {
 	return (out)
 }
 
+// GetKeyCodeByName - get the keycode by its name
 func GetKeyCodeByName(name string) int {
 	name = removeSeparators(name)
 	name = strings.ToLower(name)
@@ -156,6 +167,7 @@ func GetKeyCodeByName(name string) int {
 	return -1
 }
 
+// GetLogicalAddressByName - get logical address by its name
 func GetLogicalAddressByName(name string) int {
 	name = removeSeparators(name)
 	l := len(name)
@@ -179,10 +191,12 @@ func GetLogicalAddressByName(name string) int {
 	return -1
 }
 
+// GetLogicalNameByAddress - get logical name by address
 func GetLogicalNameByAddress(addr int) string {
 	return logicalNames[addr]
 }
 
-func GetVendorById(id uint64) string {
+// GetVendorByID - Get vendor by ID
+func GetVendorByID(id uint64) string {
 	return vendorList[id]
 }
