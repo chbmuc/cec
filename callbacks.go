@@ -4,13 +4,13 @@ package cec
 import "C"
 
 import (
-        "log"
-        "unsafe"
+	"unsafe"
+
+	"github.com/golang/glog"
 )
 
 //export logMessageCallback
 func logMessageCallback(c unsafe.Pointer, msg C.cec_log_message) C.int {
-	log.Println(C.GoString(&msg.message[0]))
-
-        return 0;
+	glog.V(2).Info(C.GoString(&msg.message[0]))
+	return 0
 }

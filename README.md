@@ -16,10 +16,18 @@ A simple example to turn on the TV:
 ```go
 package main
 
-import "github.com/chbmuc/cec"
+import (
+	"flag"
+	
+	"github.com/chbmuc/cec"
+)
 
 func main() {
+	flag.Parse()
 	cec.Open("", "cec.go")
-	cec.PowerOn(0)
+	cec.PowerOn(cec.TV)
 }
 ```
+
+To see log output from this package, add the '--logtostderr' flag when executing your binary.
+To see debug output from libCEC, add the '--logtostderr' and '--v=2' flags when executing your binary.
