@@ -16,10 +16,16 @@ A simple example to turn on the TV:
 ```go
 package main
 
-import "github.com/chbmuc/cec"
+import (
+	"fmt"
+	"github.com/chbmuc/cec"
+)
 
 func main() {
-	c := cec.Open("", "cec.go")
+	c, err := cec.Open("", "cec.go")
+	if err != nil {
+		fmt.Println(err)
+	}
 	c.PowerOn(0)
 }
 ```
