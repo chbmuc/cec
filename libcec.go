@@ -114,7 +114,7 @@ func openAdapter(connection C.libcec_connection_t, adapter cecAdapter) error {
 // Transmit CEC command - command is encoded as a hex string with
 // colons (e.g. "40:04")
 func (c *Connection) Transmit(command string) {
-	var cecCommand C.cecCommand
+	var cecCommand C.cec_command
 
 	cmd, err := hex.DecodeString(removeSeparators(command))
 	if err != nil {
@@ -141,7 +141,7 @@ func (c *Connection) Transmit(command string) {
 		}
 	}
 
-	C.libcec_transmit(c.connection, (*C.cecCommand)(&cecCommand))
+	C.libcec_transmit(c.connection, (*C.cec_command)(&cecCommand))
 }
 
 // Destroy - destroy the cec connection
