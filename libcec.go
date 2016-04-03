@@ -62,9 +62,7 @@ func cecInit(deviceName string) (C.libcec_connection_t, error) {
 	var connection C.libcec_connection_t
 	var conf C.libcec_configuration
 
-	// XXX: remove ?
-	// conf.clientVersion = C.uint32_t(C.CEC_CLIENT_VERSION_CURRENT)
-	// conf.serverVersion = C.uint32_t(C.CEC_SERVER_VERSION_CURRENT)
+	conf.clientVersion = C.uint32_t(C.LIBCEC_VERSION_CURRENT)
 
 	for i := 0; i < 5; i++ {
 		conf.deviceTypes.types[i] = C.CEC_DEVICE_TYPE_RESERVED
