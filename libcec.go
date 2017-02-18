@@ -7,11 +7,11 @@ package cec
 
 ICECCallbacks g_callbacks;
 // callbacks.go exports
-int logMessageCallback(void *, const cec_log_message);
+void logMessageCallback(void *, const cec_log_message *);
 
 void setupCallbacks(libcec_configuration *conf)
 {
-	g_callbacks.CBCecLogMessage = &logMessageCallback;
+	g_callbacks.logMessage = &logMessageCallback;
 	(*conf).callbacks = &g_callbacks;
 }
 
@@ -46,6 +46,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"unsafe"
 )
 
 // Connection class
@@ -219,9 +220,10 @@ func (c *Connection) GetActiveDevices() [16]bool {
 
 // GetDeviceOSDName - get the OSD name of the specified device
 func (c *Connection) GetDeviceOSDName(address int) string {
-	result := C.libcec_get_device_osd_name(c.connection, C.cec_logical_address(address))
+	name := make([]byte, 14)
+	C.libcec_get_device_osd_name(c.connection, C.cec_logical_address(address), (*C.char)(unsafe.Pointer(&name[0])))
 
-	return C.GoString(&result.name[0])
+	return string(name)
 }
 
 // IsActiveSource - check if the device at the given address is the active source

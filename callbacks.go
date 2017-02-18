@@ -9,8 +9,8 @@ import (
 )
 
 //export logMessageCallback
-func logMessageCallback(c unsafe.Pointer, msg C.cec_log_message) C.int {
-	log.Println(C.GoString(&msg.message[0]))
+func logMessageCallback(c unsafe.Pointer, msg *C.cec_log_message) C.int {
+	log.Println(C.GoString(msg.message))
 
 	return 0
 }
