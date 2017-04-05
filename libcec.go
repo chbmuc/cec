@@ -2,6 +2,8 @@ package cec
 
 /*
 #cgo pkg-config: libcec
+//#cgo CFLAGS: -Iinclude
+//#cgo LDFLAGS: -lcec
 #include <stdio.h>
 #include <libcec/cecc.h>
 
@@ -12,29 +14,18 @@ void logMessageCallback(void *, const cec_log_message *);
 void setupCallbacks(libcec_configuration *conf)
 {
 	g_callbacks.logMessage = &logMessageCallback;
+	g_callbacks.keyPress = NULL;
+	g_callbacks.commandReceived = NULL;
+	g_callbacks.configurationChanged = NULL;
+	g_callbacks.alert = NULL;
+	g_callbacks.menuStateChanged = NULL;
+	g_callbacks.sourceActivated = NULL;
 	(*conf).callbacks = &g_callbacks;
 }
 
 void setName(libcec_configuration *conf, char *name)
 {
 	snprintf((*conf).strDeviceName, 13, "%s", name);
-}
-
-static void clearLogicalAddresses(cec_logical_addresses* addresses)
-{
-	int i;
-
-	addresses->primary = CECDEVICE_UNREGISTERED;
-	for (i = 0; i < 16; i++)
-		addresses->addresses[i] = 0;
-}
-
-void setLogicalAddress(cec_logical_addresses* addresses, cec_logical_address address)
-{
-	if (addresses->primary == CECDEVICE_UNREGISTERED)
-		addresses->primary = address;
-
-	addresses->addresses[(int) address] = 1;
 }
 
 */
@@ -65,9 +56,6 @@ func cecInit(deviceName string) (C.libcec_connection_t, error) {
 
 	conf.clientVersion = C.uint32_t(C.LIBCEC_VERSION_CURRENT)
 
-	for i := 0; i < 5; i++ {
-		conf.deviceTypes.types[i] = C.CEC_DEVICE_TYPE_RESERVED
-	}
 	conf.deviceTypes.types[0] = C.CEC_DEVICE_TYPE_RECORDING_DEVICE
 
 	C.setName(&conf, C.CString(deviceName))
