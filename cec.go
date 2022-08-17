@@ -13,6 +13,7 @@ type Device struct {
 	Vendor          string
 	LogicalAddress  int
 	ActiveSource    bool
+	CECVersion      string
 	PowerStatus     string
 	PhysicalAddress string
 }
@@ -133,6 +134,7 @@ func (c *Connection) List() map[string]Device {
 			dev.OSDName = c.GetDeviceOSDName(address)
 			dev.PowerStatus = c.GetDevicePowerStatus(address)
 			dev.ActiveSource = c.IsActiveSource(address)
+			dev.CECVersion = c.GetDeviceCecVersion(address)
 			dev.Vendor = GetVendorByID(c.GetDeviceVendorID(address))
 
 			devices[logicalNames[address]] = dev

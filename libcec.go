@@ -259,3 +259,25 @@ func (c *Connection) GetDevicePowerStatus(address int) string {
 		return ""
 	}
 }
+
+func (c *Connection) GetDeviceCecVersion(address int) string {
+	result := int(C.libcec_get_device_cec_version(c.connection, C.cec_logical_address(address)))
+
+	if result == C.CEC_VERSION_1_2 {
+		return "1.2"
+	} else if result == C.CEC_VERSION_1_2A {
+		return "1.2a"
+	} else if result == C.CEC_VERSION_1_3 {
+		return "1.3"
+	} else if result == C.CEC_VERSION_1_3A {
+		return "1.3a"
+	} else if result == C.CEC_VERSION_1_4 {
+		return "1.4"
+	} else if result == C.CEC_VERSION_2_0 {
+		return "2.0"
+	} else if result == C.CEC_VERSION_UNKNOWN {
+		return "unknown"
+	}
+
+	return ""
+}
