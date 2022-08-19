@@ -6,6 +6,7 @@ package cec
 //#cgo LDFLAGS: -lcec
 #include <stdio.h>
 #include <libcec/cecc.h>
+#include <stdlib.h>
 
 ICECCallbacks g_callbacks;
 // callbacks.go exports
@@ -280,4 +281,15 @@ func (c *Connection) GetDeviceCecVersion(address int) string {
 	}
 
 	return ""
+}
+
+func (c *Connection) GetDeviceMenuLanguage(address int) string {
+	lang := make([]byte, 4)
+	result := (*C.char)(unsafe.Pointer(&lang))
+	C.libcec_get_device_menu_language(c.connection, C.cec_logical_address(address), result)
+	resultString := C.GoString(result)
+	if resultString == "" {
+		return "unknown"
+	}
+	return resultString
 }
