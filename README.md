@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-	c, err := cec.Open("", "cec.go")
+	c, err := cec.Open("", "cec.go", true)
 	if err != nil {
 		fmt.Println(err)
 	}
