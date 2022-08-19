@@ -57,12 +57,12 @@ var keyList = map[int]string{0x00: "Select", 0x01: "Up", 0x02: "Down", 0x03: "Le
 	0x96: "Max"}
 
 // Open - open a new connection to the CEC device with the given name
-func Open(name string, deviceName string) (*Connection, error) {
+func Open(name string, deviceName string, printLogs bool) (*Connection, error) {
 	c := new(Connection)
 
 	var err error
 
-	c.connection, err = cecInit(deviceName)
+	c.connection, err = cecInit(deviceName, printLogs)
 	if err != nil {
 		log.Println(err)
 		return nil, err

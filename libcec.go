@@ -51,7 +51,7 @@ type cecAdapter struct {
 	Comm string
 }
 
-func cecInit(deviceName string) (C.libcec_connection_t, error) {
+func cecInit(deviceName string, printLogs bool) (C.libcec_connection_t, error) {
 	var connection C.libcec_connection_t
 	var conf C.libcec_configuration
 
@@ -60,7 +60,9 @@ func cecInit(deviceName string) (C.libcec_connection_t, error) {
 	conf.deviceTypes.types[0] = C.CEC_DEVICE_TYPE_RECORDING_DEVICE
 
 	C.setName(&conf, C.CString(deviceName))
-	C.setupCallbacks(&conf)
+	if printLogs {
+		C.setupCallbacks(&conf)
+	}
 
 	connection = C.libcec_initialise(&conf)
 	if connection == C.libcec_connection_t(nil) {
