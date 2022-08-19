@@ -101,6 +101,10 @@ func openAdapter(connection C.libcec_connection_t, adapter cecAdapter) error {
 	return nil
 }
 
+func (c *Connection) GetLibInfo() string {
+	return C.GoString(C.libcec_get_lib_info(c.connection))
+}
+
 // Transmit CEC command - command is encoded as a hex string with
 // colons (e.g. "40:04")
 func (c *Connection) Transmit(command string) {
