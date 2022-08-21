@@ -6,6 +6,7 @@ package cec
 //#cgo LDFLAGS: -lcec
 #include <stdio.h>
 #include <libcec/cecc.h>
+#include <stdlib.h>
 
 ICECCallbacks g_callbacks;
 // callbacks.go exports
@@ -50,7 +51,7 @@ type cecAdapter struct {
 	Comm string
 }
 
-func cecInit(deviceName string) (C.libcec_connection_t, error) {
+func cecInit(deviceName string, printLogs bool) (C.libcec_connection_t, error) {
 	var connection C.libcec_connection_t
 	var conf C.libcec_configuration
 
@@ -59,7 +60,9 @@ func cecInit(deviceName string) (C.libcec_connection_t, error) {
 	conf.deviceTypes.types[0] = C.CEC_DEVICE_TYPE_RECORDING_DEVICE
 
 	C.setName(&conf, C.CString(deviceName))
-	C.setupCallbacks(&conf)
+	if printLogs {
+		C.setupCallbacks(&conf)
+	}
 
 	connection = C.libcec_initialise(&conf)
 	if connection == C.libcec_connection_t(nil) {
@@ -96,6 +99,10 @@ func openAdapter(connection C.libcec_connection_t, adapter cecAdapter) error {
 	}
 
 	return nil
+}
+
+func (c *Connection) GetLibInfo() string {
+	return C.GoString(C.libcec_get_lib_info(c.connection))
 }
 
 // Transmit CEC command - command is encoded as a hex string with
@@ -258,4 +265,37 @@ func (c *Connection) GetDevicePowerStatus(address int) string {
 	} else {
 		return ""
 	}
+}
+
+func (c *Connection) GetDeviceCecVersion(address int) string {
+	result := int(C.libcec_get_device_cec_version(c.connection, C.cec_logical_address(address)))
+
+	if result == C.CEC_VERSION_1_2 {
+		return "1.2"
+	} else if result == C.CEC_VERSION_1_2A {
+		return "1.2a"
+	} else if result == C.CEC_VERSION_1_3 {
+		return "1.3"
+	} else if result == C.CEC_VERSION_1_3A {
+		return "1.3a"
+	} else if result == C.CEC_VERSION_1_4 {
+		return "1.4"
+	} else if result == C.CEC_VERSION_2_0 {
+		return "2.0"
+	} else if result == C.CEC_VERSION_UNKNOWN {
+		return "unknown"
+	}
+
+	return ""
+}
+
+func (c *Connection) GetDeviceMenuLanguage(address int) string {
+	lang := make([]byte, 4)
+	result := (*C.char)(unsafe.Pointer(&lang))
+	C.libcec_get_device_menu_language(c.connection, C.cec_logical_address(address), result)
+	resultString := C.GoString(result)
+	if resultString == "" {
+		return "unknown"
+	}
+	return resultString
 }

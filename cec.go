@@ -13,8 +13,10 @@ type Device struct {
 	Vendor          string
 	LogicalAddress  int
 	ActiveSource    bool
+	CECVersion      string
 	PowerStatus     string
 	PhysicalAddress string
+	Language        string
 }
 
 var logicalNames = []string{"TV", "Recording", "Recording2", "Tuner",
@@ -55,12 +57,12 @@ var keyList = map[int]string{0x00: "Select", 0x01: "Up", 0x02: "Down", 0x03: "Le
 	0x96: "Max"}
 
 // Open - open a new connection to the CEC device with the given name
-func Open(name string, deviceName string) (*Connection, error) {
+func Open(name string, deviceName string, printLogs bool) (*Connection, error) {
 	c := new(Connection)
 
 	var err error
 
-	c.connection, err = cecInit(deviceName)
+	c.connection, err = cecInit(deviceName, printLogs)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -133,6 +135,8 @@ func (c *Connection) List() map[string]Device {
 			dev.OSDName = c.GetDeviceOSDName(address)
 			dev.PowerStatus = c.GetDevicePowerStatus(address)
 			dev.ActiveSource = c.IsActiveSource(address)
+			dev.CECVersion = c.GetDeviceCecVersion(address)
+			dev.Language = c.GetDeviceMenuLanguage(address)
 			dev.Vendor = GetVendorByID(c.GetDeviceVendorID(address))
 
 			devices[logicalNames[address]] = dev
